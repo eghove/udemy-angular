@@ -1,5 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms'
+import { HttpClient } from '@angular/common/http';
+import { map } from 'rxjs/operators';
+
+import { Post } from './post.model';
+import { PostsService } from './posts.service';
 
 @Component({
   selector: 'app-root',
@@ -7,41 +11,52 @@ import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms'
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  genders = ['male', 'female'];
-  signupForm: FormGroup;
-  forbiddenUserNames = ['Chris', 'Anna'];
+  loadedPosts: Post[] = [];
+  isFetching = false;
+  error = null;
+
+  constructor(private http: HttpClient, private postsService: PostsService) { }
 
   ngOnInit() {
-    this.signupForm = new FormGroup({
-      'userData': new FormGroup({
-        'username': new FormControl(null, [Validators.required,this.forbiddenNames.bind(this)]),
-        'email': new FormControl(null, [Validators.required, Validators.email]),
-      }),
-      'gender': new FormControl('male'),
-      'hobbies': new FormArray([])
-
+    this.isFetching = true;
+    this.postsService.fetchPosts().subscribe(posts => {
+      this.isFetching = false;
+      this.loadedPosts = posts;
+    }, error => { 
+        this.error = error.message;
+        this.isFetching = false;
     });
   }
 
-  onSubmit() {
-    console.log(this.signupForm);
-  }
-
-  getControls() {
-    return (<FormArray>this.signupForm.get('hobbies')).controls;
-  }
-
-  onAddHobby() {
-    const control = new FormControl(null, Validators.required);
-    (<FormArray>this.signupForm.get('hobbies')).push(control);
+  onCreatePost(postData: Post) {
+    // Send Http request
+    this.postsService.createAndStorePost(postData.title, postData.content);
 
   }
 
-  forbiddenNames(control: FormControl): {[s: string]: boolean} {
-    if (this.forbiddenUserNames.indexOf(control.value) !== -1) {
-      return {'nameIsForBidden': true};
-    }
-    return null;
+  onFetchPosts() {
+    // Send Http request
+    this.isFetching = true;
+    this.postsService.fetchPosts().subscribe(posts => {
+      this.isFetching = false;
+      this.loadedPosts = posts;
+    }, error => { 
+        this.isFetching = false;
+        this.error = error.message;
+    });
+
   }
+
+  onClearPosts() {
+    // Send Http request
+    this.postsService.deletePosts().subscribe(() => {
+      this.loadedPosts = [];
+    })
+  }
+
+  onHandleError() {
+    this.error = null;
+  }
+
 
 }
