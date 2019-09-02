@@ -13,6 +13,8 @@ interface AuthResponseData {
 export class AuthService {
   constructor(private http: HttpClient) {}
 
+  API_KEY: string = null;
+
 
 
   signup(email: string, password: string) {
